@@ -17,9 +17,9 @@ def loadData(config):
 
 def cleanData(dataFrame):
     try:
-        filteredDf = dataFrame[["Survived", "Age", "Fare"]]
+        filteredDf = dataFrame[["Survived", "Age", "Fare"]].copy()
     except:
-        filteredDf = dataFrame[["Age","Fare"]]
+        filteredDf = dataFrame[["Age","Fare"]].copy()
 
     filteredDf.dropna(inplace=True)
     return filteredDf
@@ -32,7 +32,7 @@ def splitData(trainingDf, config):
     y = trainingDf["Survived"]
 
     X_train, X_val, y_train, y_val = train_test_split(X, y,
-                                     train_size=trainValidationSplit,
+                                     test_size=(1-trainValidationSplit),
                                      random_state=randomSeed)
 
     return X_train, X_val, y_train, y_val
@@ -84,6 +84,7 @@ def main():
 
     modelStats = modelValidation(fittedModel, X_val, y_val)
 
+    print(modelStats)
     logRun(modelStats, config)
 
     return 1 
