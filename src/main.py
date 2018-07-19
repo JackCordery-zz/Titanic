@@ -2,9 +2,12 @@ import pandas as pd
 import config
 import csv
 from datetime import datetime
+import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split 
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score, roc_curve
+from sklearn.model_selection import learning_curve
 
 def loadData(config):
     trainingSetPath = config.TRAIN_INPUT_PATH
@@ -15,13 +18,25 @@ def loadData(config):
 
     return trainingDf, testDf
 
+def transformGender(gender):
+    gender = gender.lower()
+    if gender == "male":
+        return 0
+    elif gender == "female":
+        return 1
+    else:
+        return None
+
 def cleanData(dataFrame):
     try:
-        filteredDf = dataFrame[["Survived", "Age", "Fare"]].copy()
+        filteredDf = dataFrame[["Survived", "Age", "Fare", "Sex"]].copy()
     except:
-        filteredDf = dataFrame[["Age","Fare"]].copy()
+        filteredDf = dataFrame[["Age","Fare", "Sex"]].copy()
+
+    filteredDf["Sex"] = filteredDf["Sex"].apply(transformGender)
 
     filteredDf.dropna(inplace=True)
+
     return filteredDf
 
 def splitData(trainingDf, config):
@@ -52,10 +67,48 @@ def calculateAuc(model, X_val, y_val):
     areaUnderCurve = roc_auc_score(y_val, y_predPositiveClass)
     return areaUnderCurve
 
-def modelValidation(model, X_val, y_val):
-    modelScore = model.score(X_val, y_val)
+def modelValidation(model, X_train, X_val, y_train, y_val):
+    modelScoreValidationSet = model.score(X_val, y_val)
+    modelScoreTrainingSet = model.score(X_train, y_train)
     areaUnderCurve = calculateAuc(model, X_val, y_val)
-    return {"modelScore" : modelScore, "areaUnderCurve" : areaUnderCurve}
+    return {"modelScoreValidationSet" : modelScoreValidationSet,
+            "modelScoreTrainingSet" : modelScoreTrainingSet,
+            "areaUnderCurve" : areaUnderCurve}
+
+def plotLearningCurve(model, X, y, cv=None,
+                      trainSizes=[0.1, 0.33, 0.55, 0.78, 1. ]):
+    plt.figure()
+    plt.title("learning_curve")
+
+    plt.xlabel("Training examples")
+    plt.ylabel("Score")
+
+    trainSizes, trainScores, validScores = learning_curve(
+        model, X, y, cv=cv, train_sizes=trainSizes)
+
+    trainScoresMean = np.mean(trainScores, axis=1)
+    validScoresMean = np.mean(validScores, axis=1)
+
+    trainScoresStd = np.std(trainScores, axis=1)
+    validScoresStd = np.std(validScores, axis=1)
+
+    plt.grid()
+
+    #Plot band of variance
+    plt.fill_between(trainSizes, trainScoresMean - trainScoresStd,
+                                 trainScoresMean + trainScoresStd,
+                                 alpha=0.1, color='r',
+                                 label="Training Score")
+    plt.fill_between(trainSizes, validScoresMean - validScoresStd,
+                                 validScoresMean + validScoresStd,
+                                 alpha=0.1, color='g',
+                                 label="Cross-Validation Score")
+    #Plot mean as point
+    plt.plot(trainSizes, trainScoresMean, 'o-', color='r')
+    plt.plot(trainSizes, validScoresMean, 'o-', color='g')
+
+    plt.legend(loc='best')
+    return plt
 
 def logRun(modelStats, config):
     runsFilePath = config.LOG_PATH
@@ -71,7 +124,11 @@ def logRun(modelStats, config):
         writer.writerow(logInputs.values())        
     return
 
-def main():
+def logTrainingDataStats(dataframe):
+    return
+
+def pipeline(config):
+
     trainingDf, testDf = loadData(config)
 
     cleanTrainingDf = cleanData(trainingDf)
@@ -82,10 +139,26 @@ def main():
     model = initialiseModel(config)
     fittedModel = fitModel(model, X_train, y_train)
 
-    modelStats = modelValidation(fittedModel, X_val, y_val)
+    modelStats = modelValidation(fittedModel, X_train, X_val, y_train, y_val)
 
     print(modelStats)
     logRun(modelStats, config)
+
+    data = {"X_train" : X_train,
+            "X_val" : X_val,
+            "y_train" : y_train,
+            "y_val" : y_val}
+
+    return fittedModel, modelStats, data 
+
+
+def main():
+
+    model, modelStats, data = pipeline(config)
+
+    plt = plotLearningCurve(model, data["X_train"], data["y_train"], cv=5)
+    plt.show(block=True)
+
 
     return 1 
 
