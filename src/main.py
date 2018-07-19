@@ -4,10 +4,10 @@ import csv
 from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split 
+from sklearn.model_selection import train_test_split, learning_curve
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score, roc_curve
-from sklearn.model_selection import learning_curve
+from sklearn.model_selection import validation_curve
 
 def loadData(config):
     trainingSetPath = config.TRAIN_INPUT_PATH
@@ -75,8 +75,7 @@ def modelValidation(model, X_train, X_val, y_train, y_val):
             "modelScoreTrainingSet" : modelScoreTrainingSet,
             "areaUnderCurve" : areaUnderCurve}
 
-def plotLearningCurve(model, X, y, cv=None,
-                      trainSizes=[0.1, 0.33, 0.55, 0.78, 1. ]):
+def plotLearningCurve(model, X, y, cv=None,trainSizes=[0.1, 0.33, 0.55, 0.78, 1. ]):
     plt.figure()
     plt.title("learning_curve")
 
@@ -109,6 +108,41 @@ def plotLearningCurve(model, X, y, cv=None,
 
     plt.legend(loc='best')
     return plt
+
+def plotValidationCurve(model, X, y, paramName, paramRange, scoring, cv=None):
+
+    trainScores, validScores = validation_curve(model, X, y,
+                                                param_name=paramName,
+                                                param_range=paramRange,
+                                                cv=cv,
+                                                scoring=scoring)
+
+    trainScoresMean = np.mean(trainScores, axis=1)
+    validScoresMean = np.mean(validScores, axis=1)
+
+    trainScoresStd = np.std(trainScores, axis=1)
+    validScoresStd = np.std(validScores, axis=1)
+
+    plt.title("validation_curve")
+    plt.xlabel(paramName)
+    plt.ylabel("Score")
+
+    plt.semilogx(paramRange, trainScoresMean, label="Training score",
+             color="darkorange")
+    plt.fill_between(paramRange, trainScoresMean - trainScoresStd,
+                     trainScoresMean + trainScoresStd, alpha=0.1,
+                     color="darkorange")
+    plt.semilogx(paramRange, validScoresMean, label="Cross-validation score",
+                 color="navy")
+    plt.fill_between(paramRange, validScoresMean - validScoresStd,
+                     validScoresMean + validScoresStd, alpha=0.1,
+                     color="navy")
+    plt.legend(loc="best")
+    return plt
+
+
+
+
 
 def logRun(modelStats, config):
     runsFilePath = config.LOG_PATH
@@ -156,8 +190,14 @@ def main():
 
     model, modelStats, data = pipeline(config)
 
-    plt = plotLearningCurve(model, data["X_train"], data["y_train"], cv=5)
-    plt.show(block=True)
+    #plt = plotLearningCurve(model, data["X_train"], data["y_train"], cv=5)
+    #plt.show(block=True)
+
+    pltVal = plotValidationCurve(model, data["X_train"], data["y_train"],
+                                 paramName="C",
+                                 paramRange=np.logspace(-6,-1,5),
+                                 scoring="accuracy",cv=5)
+    pltVal.show()
 
 
     return 1 
