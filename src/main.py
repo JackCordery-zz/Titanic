@@ -18,22 +18,30 @@ def loadData(config):
 
     return trainingDf, testDf
 
-def transformGender(gender):
-    gender = gender.lower()
-    if gender == "male":
+def categoriseAge(age):
+
+    if age <=16:
         return 0
-    elif gender == "female":
+    elif (age > 16) & (age <= 32):
         return 1
+    elif (age > 32) & (age <= 48):
+        return 2
+    elif (age > 48) & (age <= 64):
+        return 3
     else:
-        return None
+        return 4
 
 def cleanData(dataFrame):
     try:
-        filteredDf = dataFrame[["Survived", "Age", "Fare", "Sex"]].copy()
+        filteredDf = dataFrame[["Survived", "Age", "Fare", "Sex", "SibSp", "Parch"]].copy()
     except:
-        filteredDf = dataFrame[["Age","Fare", "Sex"]].copy()
+        filteredDf = dataFrame[["Age","Fare", "Sex",  "SibSp", "Parch"]].copy()
 
-    filteredDf["Sex"] = filteredDf["Sex"].apply(transformGender)
+    filteredDf["Sex"] = filteredDf["Sex"].map({'female': 0, 'male': 1 }).astype(int)
+
+    filteredDf["FamilySize"] = filteredDf['SibSp'] + filteredDf['Parch'] + 1
+
+    filteredDf["Age"] = filteredDf["Age"].apply(categoriseAge)
 
     filteredDf.dropna(inplace=True)
 
@@ -145,8 +153,6 @@ def plotValidationCurve(model, X, y, paramName, paramRange, scoring, cv=None, yl
 def plotROC(model, X, y):
 
     yPredicted = model.predict_proba(X)
-
-    print(roc_curve(y, yPredicted[:,1]))
 
     fpr, tpr, _ = roc_curve(y, yPredicted[:,1])
     areaUnderCurve = roc_auc_score(y, yPredicted[:,1])
