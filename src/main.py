@@ -109,13 +109,14 @@ def plotLearningCurve(model, X, y, cv=None,trainSizes=[0.1, 0.33, 0.55, 0.78, 1.
     plt.legend(loc='best')
     return plt
 
-def plotValidationCurve(model, X, y, paramName, paramRange, scoring, cv=None):
+def plotValidationCurve(model, X, y, paramName, paramRange, scoring, cv=None, ylim=[0.5,1]):
 
     trainScores, validScores = validation_curve(model, X, y,
                                                 param_name=paramName,
                                                 param_range=paramRange,
-                                                cv=cv,
-                                                scoring=scoring)
+                                                scoring=scoring,
+                                                cv=cv
+                                                )
 
     trainScoresMean = np.mean(trainScores, axis=1)
     validScoresMean = np.mean(validScores, axis=1)
@@ -126,13 +127,14 @@ def plotValidationCurve(model, X, y, paramName, paramRange, scoring, cv=None):
     plt.title("validation_curve")
     plt.xlabel(paramName)
     plt.ylabel("Score")
+    plt.ylim(ylim)
 
-    plt.semilogx(paramRange, trainScoresMean, label="Training score",
+    plt.plot(paramRange, trainScoresMean, label="Training score",
              color="darkorange")
     plt.fill_between(paramRange, trainScoresMean - trainScoresStd,
                      trainScoresMean + trainScoresStd, alpha=0.1,
                      color="darkorange")
-    plt.semilogx(paramRange, validScoresMean, label="Cross-validation score",
+    plt.plot(paramRange, validScoresMean, label="Cross-validation score",
                  color="navy")
     plt.fill_between(paramRange, validScoresMean - validScoresStd,
                      validScoresMean + validScoresStd, alpha=0.1,
@@ -195,8 +197,8 @@ def main():
 
     pltVal = plotValidationCurve(model, data["X_train"], data["y_train"],
                                  paramName="C",
-                                 paramRange=np.logspace(-6,-1,5),
-                                 scoring="accuracy",cv=5)
+                                 paramRange=np.linspace(0.1,20.,100),
+                                 scoring="accuracy",cv=5, ylim=[0.7,1])
     pltVal.show()
 
 
