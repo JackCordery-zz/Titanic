@@ -249,9 +249,6 @@ def logRun(modelStats, config):
         writer.writerow(logInputs.values())        
     return
 
-def logTrainingDataStats(dataframe):
-    return
-
 def pipeline(config, modelComment):
 
     trainingDf, testDf = loadData(config)
