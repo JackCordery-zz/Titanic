@@ -4,6 +4,7 @@ import csv
 from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+import re
 from sklearn.model_selection import train_test_split, learning_curve
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score, roc_curve
@@ -31,17 +32,82 @@ def categoriseAge(age):
     else:
         return 4
 
+def getTitle(name):
+    titleSearch = re.search(' ([A-Za-z]+)\.', name)
+
+    if titleSearch:
+        return titleSearch.group(1)
+    else:
+        return ""
+
+def categoriseTitles(name):
+    rareTitles = ['Lady', 'Countess', 'Capt', 'Col', 'Don', 'Dr', 'Major','Rev',
+                  'Sir', 'Jonkheer', 'Dona']
+    missTitles = ['Mlle', 'Ms']
+    mrsTitles = ['Mme']
+
+    if name in rareTitles:
+        return "Rare"
+    elif name in missTitles:
+        return "Miss"
+    elif name in mrsTitles:
+        return "Mrs"
+    else:
+        return name
+
+def isAlone(familySize):
+    if familySize == 1:
+        return 1
+    else:
+        return 0
+
+def categoriseFare(fare):
+    if fare <= 7.91:
+        return 0
+    elif (fare > 7.91) & (fare <= 14.454):
+        return 1
+    elif (fare > 14.454) & (fare <= 31):
+        return 2
+    elif fare > 31:
+        return 3
+
 def cleanData(dataFrame):
+
+    columnsToUse = ["Age", "Fare", "Sex", "SibSp", "Parch", "Name", "Embarked",
+                    "Pclass"]
+
     try:
-        filteredDf = dataFrame[["Survived", "Age", "Fare", "Sex", "SibSp", "Parch"]].copy()
+        filteredDf = dataFrame[["Survived"] +  columnsToUse].copy()
     except:
-        filteredDf = dataFrame[["Age","Fare", "Sex",  "SibSp", "Parch"]].copy()
+        filteredDf = dataFrame[columnsToUse].copy()
+
+    filteredDf["Age"] = filteredDf["Age"].fillna(filteredDf["Age"].median())
+    filteredDf["Embarked"] = filteredDf["Embarked"].fillna('S')
+    filteredDf["Fare"] = filteredDf["Fare"].fillna(filteredDf["Fare"].median())
+
+    filteredDf["Fare"] = filteredDf["Fare"].apply(categoriseFare).astype(int)
+
+    filteredDf["Embarked"] = filteredDf["Embarked"].map({'S': 0, 'C':1, 'Q':2}).astype(int)
+
+    filteredDf["Name"] = filteredDf["Name"].apply(getTitle).apply(categoriseTitles)
+    filteredDf["Name"] = filteredDf["Name"].map({"Mr": 1,
+                                                   "Miss": 2,
+                                                   "Mrs": 3,
+                                                   "Master": 4,
+                                                   "Rare": 5})
+
 
     filteredDf["Sex"] = filteredDf["Sex"].map({'female': 0, 'male': 1 }).astype(int)
 
     filteredDf["FamilySize"] = filteredDf['SibSp'] + filteredDf['Parch'] + 1
+    filteredDf["isAlone"] = filteredDf["FamilySize"].apply(isAlone).astype(int)
 
     filteredDf["Age"] = filteredDf["Age"].apply(categoriseAge)
+
+
+
+    dropColumns = ["SibSp", "Parch", "FamilySize"]
+    filteredDf = filteredDf.drop(dropColumns, axis=1)
 
     filteredDf.dropna(inplace=True)
 
@@ -186,7 +252,7 @@ def logRun(modelStats, config):
 def logTrainingDataStats(dataframe):
     return
 
-def pipeline(config):
+def pipeline(config, modelComment):
 
     trainingDf, testDf = loadData(config)
 
@@ -199,6 +265,7 @@ def pipeline(config):
     fittedModel = fitModel(model, X_train, y_train)
 
     modelStats = modelValidation(fittedModel, X_train, X_val, y_train, y_val)
+    modelStats = {**modelStats, **{"comment": modelComment}}
 
     print(modelStats)
     logRun(modelStats, config)
@@ -213,9 +280,11 @@ def pipeline(config):
 
 def main():
 
-    model, modelStats, data = pipeline(config)
+    modelComment = input("Please insert a message to describe model:")
 
-    plt = plotROC(model, data["X_val"], data["y_val"])
+    model, modelStats, data = pipeline(config, modelComment)
+
+    plt = plotValidationCurve(model, data["X_val"], data["y_val"], "C",np.linspace(1,50,100) , "accuracy")
     plt.show()
 
     return 1 
