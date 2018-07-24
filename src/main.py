@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split, learning_curve
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score, roc_curve
 from sklearn.model_selection import validation_curve
+from sklearn.feature_selection import RFE
 
 def loadData(config):
     trainingSetPath = config.TRAIN_INPUT_PATH
@@ -134,6 +135,12 @@ def initialiseModel(config):
 def fitModel(model, X_train, y_train):
     model.fit(X_train, y_train)
     return model
+
+def getWaldStatistics(model, X):
+
+    predProbs = np.matrix(model.predict_proba(X))
+
+
 
 def calculateAuc(model, X_val, y_val):
     y_pred = model.predict_proba(X_val)
@@ -274,15 +281,47 @@ def pipeline(config, modelComment):
 
     return fittedModel, modelStats, data 
 
+def featureSelection(model,rangeFeatures, X, X_val, y, y_val):
+    stats = {}
+    for n in rangeFeatures:
+        selector = RFE(model, n)
+        fit = selector.fit(X, y)
+        individualStats = {"n": n,
+                           "n_features": fit.n_features_,
+                           "support": fit.support_,
+                           "ranking": fit.ranking_,
+                           "score_train": fit.score(X, y),
+                           "score_val":  fit.score(X_val, y_val)}
+        print(individualStats)
+
+    return
+
+def featurePipeline(config):
+    trainingDf, testDf = loadData(config)
+
+    cleanTrainingDf = cleanData(trainingDf)
+    cleanTestDf = cleanData(testDf)
+
+    X_train, X_val, y_train, y_val = splitData(cleanTrainingDf, config)
+
+    model = initialiseModel(config)
+
+    featureSelection(model, range(1,X_train.shape[1] + 1), X_train, X_val,
+                     y_train, y_val)
+    return
+
+
 
 def main():
-
+    """
     modelComment = input("Please insert a message to describe model:")
 
     model, modelStats, data = pipeline(config, modelComment)
 
-    plt = plotValidationCurve(model, data["X_val"], data["y_val"], "C",np.linspace(1,50,100) , "accuracy")
+    plt = plotValidationCurve(model, data["X_val"], data["y_val"], "C",np.logspace(0,4,10) , "accuracy")
     plt.show()
+    """
+    featurePipeline(config)
 
     return 1 
 
