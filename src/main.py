@@ -72,10 +72,15 @@ def categoriseFare(fare):
     elif fare > 31:
         return 3
 
-def cleanData(dataFrame):
+def cleanData(dataFrame, mode="train"):
 
     columnsToUse = ["Age", "Fare", "Sex", "SibSp", "Parch", "Name", "Embarked",
                     "Pclass"]
+
+    if mode == "test":
+        columnsToUse = ["PassengerId"] + columnsToUse
+    else:
+        pass
 
     try:
         filteredDf = dataFrame[["Survived"] +  columnsToUse].copy()
@@ -136,11 +141,15 @@ def fitModel(model, X_train, y_train):
     model.fit(X_train, y_train)
     return model
 
-def getWaldStatistics(model, X):
+def scoreTestSet(model, df):
+    passengerId = df["PassengerId"].values
+    X = df.drop(["PassengerId"], axis=1)
+    print(X)
+    predictions = model.predict(X)
 
-    predProbs = np.matrix(model.predict_proba(X))
+    submission = np.hstack((passengerId, predictions))
 
-
+    return submission
 
 def calculateAuc(model, X_val, y_val):
     y_pred = model.predict_proba(X_val)
@@ -260,8 +269,8 @@ def pipeline(config, modelComment):
 
     trainingDf, testDf = loadData(config)
 
-    cleanTrainingDf = cleanData(trainingDf)
-    cleanTestDf = cleanData(testDf)
+    cleanTrainingDf = cleanData(trainingDf, mode="train")
+    cleanTestDf = cleanData(testDf, mode="test")
 
     X_train, X_val, y_train, y_val = splitData(cleanTrainingDf, config)
 
@@ -270,6 +279,13 @@ def pipeline(config, modelComment):
 
     modelStats = modelValidation(fittedModel, X_train, X_val, y_train, y_val)
     modelStats = {**modelStats, **{"comment": modelComment}}
+
+    submission = scoreTestSet(fittedModel, cleanTestDf)
+
+    submissionFilePath = config.OUTPUT_PATH + "submission.csv"
+
+    np.savetxt(submissionFilePath, submission, delimiter=',',
+               header='passengerID, Survived')
 
     print(modelStats)
     logRun(modelStats, config)
@@ -313,15 +329,17 @@ def featurePipeline(config):
 
 
 def main():
-    """
+
+    featurePipeline(config)
+    
     modelComment = input("Please insert a message to describe model:")
 
     model, modelStats, data = pipeline(config, modelComment)
 
     plt = plotValidationCurve(model, data["X_val"], data["y_val"], "C",np.logspace(0,4,10) , "accuracy")
     plt.show()
-    """
-    featurePipeline(config)
+    
+   
 
     return 1 
 
