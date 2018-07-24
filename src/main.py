@@ -144,10 +144,9 @@ def fitModel(model, X_train, y_train):
 def scoreTestSet(model, df):
     passengerId = df["PassengerId"].values
     X = df.drop(["PassengerId"], axis=1)
-    print(X)
     predictions = model.predict(X)
 
-    submission = np.hstack((passengerId, predictions))
+    submission = np.vstack((passengerId, predictions)).T
 
     return submission
 
