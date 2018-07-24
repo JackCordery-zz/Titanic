@@ -8,7 +8,7 @@ import re
 from sklearn.model_selection import train_test_split, learning_curve
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score, roc_curve
-from sklearn.model_selection import validation_curve
+from sklearn.model_selection import validation_curve, GridSearchCV
 from sklearn.feature_selection import RFE
 
 def loadData(config):
@@ -112,8 +112,8 @@ def cleanData(dataFrame, mode="train"):
 
 
 
-    #dropColumns = ["SibSp", "Parch", "FamilySize"]
-    #filteredDf = filteredDf.drop(dropColumns, axis=1)
+    dropColumns = ["Embarked"]
+    filteredDf = filteredDf.drop(dropColumns, axis=1)
 
     filteredDf.dropna(inplace=True)
 
@@ -264,7 +264,7 @@ def logRun(modelStats, config):
         writer.writerow(logInputs.values())        
     return
 
-def pipeline(config, modelComment):
+def pipeline(config, modelComment, mode="train"):
 
     trainingDf, testDf = loadData(config)
 
@@ -277,14 +277,18 @@ def pipeline(config, modelComment):
     fittedModel = fitModel(model, X_train, y_train)
 
     modelStats = modelValidation(fittedModel, X_train, X_val, y_train, y_val)
-    modelStats = {**modelStats, **{"comment": modelComment}}
+    modelStats = {**modelStats, **{"comment": modelComment, "mode": mode}}
 
-    submission = scoreTestSet(fittedModel, cleanTestDf)
-
-    submissionFilePath = config.OUTPUT_PATH + "submission.csv"
-
-    np.savetxt(submissionFilePath, submission, fmt='%i', delimiter=',',
+    if mode=="train":
+        print("Running in TRAINING MODE")
+        submission = scoreTestSet(fittedModel, cleanTestDf)
+        submissionFilePath = config.OUTPUT_PATH + "submission.csv"
+        np.savetxt(submissionFilePath, submission, fmt='%i', delimiter=',',
                header='PassengerID,Survived', comments='')
+    elif mode=="test":
+        print("Running in TESTING MODE")
+        featurePipeline(config)
+        logisticGridSearch(X_train, y_train, X_val, y_val)
 
     print(modelStats)
     logRun(modelStats, config)
@@ -298,6 +302,8 @@ def pipeline(config, modelComment):
 
 def featureSelection(model,rangeFeatures, X, X_val, y, y_val):
     stats = {}
+    print("See the affect of n_features and combination of features:")
+    print("-----------------------------------------------------------")
     for n in rangeFeatures:
         selector = RFE(model, n)
         fit = selector.fit(X, y)
@@ -309,7 +315,29 @@ def featureSelection(model,rangeFeatures, X, X_val, y, y_val):
                            "score_val":  fit.score(X_val, y_val)}
         print(individualStats)
 
+    print('------------------------------------------------------------')
     return
+
+def logisticGridSearch(X, y, X_val, y_val):
+    logistic = LogisticRegression()
+
+    penaltySpace = ['l1', 'l2']
+    cSpace = np.logspace(0,4,10)
+
+    hyperparameters = dict(C=cSpace, penalty=penaltySpace)
+
+    clf = GridSearchCV(logistic, hyperparameters, cv=4, verbose=0)
+
+    bestModel = clf.fit(X, y)
+    print('See results for GridSearch:')
+    print('-------------------------------------------------------------')
+    print('Best Penalty:', bestModel.best_estimator_.get_params()['penalty'] )
+    print('Best C:', bestModel.best_estimator_.get_params()['C'] )
+    print('Model Train Score:', bestModel.score(X, y))
+    print('Model Test Score:', bestModel.score(X_val, y_val))
+    print('-------------------------------------------------------------')
+
+    return bestModel
 
 def featurePipeline(config):
     trainingDf, testDf = loadData(config)
@@ -329,15 +357,12 @@ def featurePipeline(config):
 
 def main():
 
-    featurePipeline(config)
-    
     modelComment = input("Please insert a message to describe model:")
 
-    model, modelStats, data = pipeline(config, modelComment)
+    model, modelStats, data = pipeline(config, modelComment, mode="test")
 
     plt = plotValidationCurve(model, data["X_val"], data["y_val"], "C",np.logspace(0,4,10) , "accuracy")
     #plt.show()
-    
    
 
     return 1 
