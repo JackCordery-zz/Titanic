@@ -142,11 +142,12 @@ def fitModel(model, X_train, y_train):
     return model
 
 def scoreTestSet(model, df):
-    passengerId = df["PassengerId"].values
+    passengerId = df["PassengerId"].astype(int).values
     X = df.drop(["PassengerId"], axis=1)
     predictions = model.predict(X)
 
     submission = np.vstack((passengerId, predictions)).T
+    print(submission)
 
     return submission
 
@@ -283,8 +284,8 @@ def pipeline(config, modelComment):
 
     submissionFilePath = config.OUTPUT_PATH + "submission.csv"
 
-    np.savetxt(submissionFilePath, submission, delimiter=',',
-               header='passengerID, Survived')
+    np.savetxt(submissionFilePath, submission, fmt='%i', delimiter=',',
+               header='PassengerID,Survived', comments='')
 
     print(modelStats)
     logRun(modelStats, config)
@@ -336,7 +337,7 @@ def main():
     model, modelStats, data = pipeline(config, modelComment)
 
     plt = plotValidationCurve(model, data["X_val"], data["y_val"], "C",np.logspace(0,4,10) , "accuracy")
-    plt.show()
+    #plt.show()
     
    
 
