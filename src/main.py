@@ -107,8 +107,8 @@ def cleanData(dataFrame):
 
 
 
-    dropColumns = ["SibSp", "Parch", "FamilySize"]
-    filteredDf = filteredDf.drop(dropColumns, axis=1)
+    #dropColumns = ["SibSp", "Parch", "FamilySize"]
+    #filteredDf = filteredDf.drop(dropColumns, axis=1)
 
     filteredDf.dropna(inplace=True)
 
