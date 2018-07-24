@@ -147,7 +147,6 @@ def scoreTestSet(model, df):
     predictions = model.predict(X)
 
     submission = np.vstack((passengerId, predictions)).T
-    print(submission)
 
     return submission
 
