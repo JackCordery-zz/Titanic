@@ -1,5 +1,6 @@
 import pandas as pd
 import config 
+from clean import map_columns
 
 def feature_engineer(dataframe, columns_to_enginner, features_to_ohe):
     dataframe["family_size"] = family_size(dataframe["SibSp"],
