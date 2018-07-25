@@ -5,6 +5,7 @@ from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import re
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split, learning_curve
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score, roc_curve
@@ -72,6 +73,45 @@ def categoriseFare(fare):
     elif fare > 31:
         return 3
 
+def OneHotEncode(df, listOfColumns):
+    try:
+        listOfColumns.remove('PassengerId')
+    except:
+        pass
+    for column in listOfColumns:
+        dfDummy = pd.get_dummies(df[column], column)
+        df = pd.concat([df, dfDummy], axis=1)
+    return df.drop(listOfColumns, axis=1)
+
+def ensureSameColumns(trainDf,testDf):
+    trainCol = trainDf.columns
+    testCol = testDf.columns
+
+    testDiff = set(trainCol).difference(testCol)
+    trainDiff = set(testCol).difference(trainCol)
+
+
+    for col in testDiff:
+        if col != 'Survived':
+            testDf[col] = 0
+
+    columnsToRemove = list(trainDiff)
+    try:
+        columnsToRemove.remove('PassengerId')
+    except:
+        pass
+
+    testDf.drop(columnsToRemove, axis=1, inplace=True)
+    print("Dropped the following from test:",columnsToRemove)
+
+    orderedColumns = list(trainCol)
+    orderedColumns.remove('Survived')
+    orderedColumns = ['PassengerId'] + orderedColumns
+    testDf = testDf[orderedColumns]
+
+    return trainDf, testDf
+    
+
 def cleanData(dataFrame, mode="train"):
 
     columnsToUse = ["Age", "Fare", "Sex", "SibSp", "Parch", "Name", "Embarked",
@@ -110,11 +150,26 @@ def cleanData(dataFrame, mode="train"):
 
     filteredDf["Age"] = filteredDf["Age"].apply(categoriseAge)
 
+    columnsToDrop = ["SibSp", "Parch"]
+
+    filteredDf.drop(columnsToDrop, axis=1, inplace=True)
+    columnsToUse = set(columnsToUse).difference(set(columnsToDrop))
+    
 
 
-    dropColumns = ["Embarked"]
-    filteredDf = filteredDf.drop(dropColumns, axis=1)
 
+    #OheDf = OneHotEncode(filteredDf, list(columnsToUse))
+
+    
+
+    #columnMask = np.where(~np.array(columnMask))[0].tolist()
+
+    #columnMask = [OheDf.columns[index] for index in columnMask]
+
+    #dropColumns = ["Embarked"]
+    #OheDf = OheDf.drop(columnMask, axis=1)
+
+    #OheDf.dropna(inplace=True)
     filteredDf.dropna(inplace=True)
 
     return filteredDf
@@ -271,6 +326,8 @@ def pipeline(config, modelComment, mode="train"):
     cleanTrainingDf = cleanData(trainingDf, mode="train")
     cleanTestDf = cleanData(testDf, mode="test")
 
+    cleanTrainingDf, cleanTestDf = ensureSameColumns(cleanTrainingDf, cleanTestDf)
+
     X_train, X_val, y_train, y_val = splitData(cleanTrainingDf, config)
 
     model = initialiseModel(config)
@@ -279,6 +336,8 @@ def pipeline(config, modelComment, mode="train"):
     modelStats = modelValidation(fittedModel, X_train, X_val, y_train, y_val)
     modelStats = {**modelStats, **{"comment": modelComment, "mode": mode}}
 
+    print(cleanTrainingDf.columns)
+    print(cleanTestDf.columns)
     if mode=="train":
         print("Running in TRAINING MODE")
         submission = scoreTestSet(fittedModel, cleanTestDf)
@@ -307,13 +366,20 @@ def featureSelection(model,rangeFeatures, X, X_val, y, y_val):
     for n in rangeFeatures:
         selector = RFE(model, n)
         fit = selector.fit(X, y)
-        individualStats = {"n": n,
-                           "n_features": fit.n_features_,
+        individualStats = {n:{"n_features": fit.n_features_,
                            "support": fit.support_,
                            "ranking": fit.ranking_,
                            "score_train": fit.score(X, y),
-                           "score_val":  fit.score(X_val, y_val)}
-        print(individualStats)
+                           "score_val":  fit.score(X_val, y_val)}}
+        stats = {**stats, **individualStats}
+
+    stats = pd.DataFrame.from_dict(stats, orient='index')
+    print(stats.columns)
+    statsSorted = stats.sort_values("score_val", ascending=False)
+    print(statsSorted.head())
+    print("Mask for best model:")
+    print("--------------------------------------------------------------")
+    print(statsSorted["support"].iloc[0])
 
     print('------------------------------------------------------------')
     return
@@ -359,7 +425,7 @@ def main():
 
     modelComment = input("Please insert a message to describe model:")
 
-    model, modelStats, data = pipeline(config, modelComment, mode="test")
+    model, modelStats, data = pipeline(config, modelComment, mode="train")
 
     plt = plotValidationCurve(model, data["X_val"], data["y_val"], "C",np.logspace(0,4,10) , "accuracy")
     #plt.show()
