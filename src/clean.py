@@ -38,6 +38,7 @@ def map_columns(dataframe, maps):
     return dataframe
 
 def main():
+    print("Nothing to see here: Clean")
     return
 
 if __name__ == '__main__':
