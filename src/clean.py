@@ -1,7 +1,7 @@
 import pandas as pd
 import config 
 
-def clean(dataframe, columns_to_drop, maps):
+def clean(dataframe, columns_to_drop=[], maps={}):
     #FILL
     df_filled = fill_columns(dataframe)
 
@@ -23,7 +23,7 @@ def fill_columns(dataframe):
     dataframe["Embarked"] = dataframe["Embarked"].fillna(embarked_value)
 
     #Fare
-    fare_value = dataframe["Fare"].medain()
+    fare_value = dataframe["Fare"].median()
     dataframe["Fare"] = dataframe["Fare"].fillna(fare_value)
 
     return dataframe
@@ -33,7 +33,7 @@ def drop_columns(dataframe, columns_to_drop):
 
 def map_columns(dataframe, maps):
     # maps = {"column_name" : {'s' : 0, ...}} = {"column_name" : map}
-    for col, map_of_column in maps.items()
+    for col, map_of_column in maps.items():
         dataframe[col] = dataframe[col].map(map_of_column).astype(int)
     return dataframe
 
