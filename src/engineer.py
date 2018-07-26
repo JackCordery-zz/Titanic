@@ -2,12 +2,12 @@ import pandas as pd
 import config 
 from clean import map_columns
 
-def feature_engineer(dataframe, columns_to_enginner, features_to_ohe):
+def feature_engineer(dataframe, columns_to_engineer=[], features_to_ohe=[]):
     dataframe["family_size"] = family_size(dataframe["SibSp"],
                                            dataframe["Parch"])
     dataframe["is_alone"] = dataframe["family_size"].apply(is_alone).astype(int)
 
-    dataframe = remove_unspecified_features(dataframe, columns_to_enginner)
+    dataframe = remove_unspecified_features(dataframe, columns_to_engineer)
 
     dataframe = one_hot_encode(dataframe, features_to_ohe)
 
@@ -22,12 +22,71 @@ def is_alone(family_size):
     else:
         return 0
 
+def get_title(name):
+    title_search = re.search(' ([A-Za-z]+)\.', name)
+
+    if title_search:
+        return title_search.group(1)
+    else:
+        return ""
+
+def categorise_title(name):
+
+    title = get_title(name)
+
+    rare_titles = ['Lady', 'Countess', 'Capt', 'Col', 'Don', 'Dr', 'Major','Rev',
+                  'Sir', 'Jonkheer', 'Dona']
+    miss_titles = ['Mlle', 'Ms']
+    mrs_titles = ['Mme']
+
+    if title in rare_titles:
+        return "Rare"
+    elif title in miss_titles:
+        return "Miss"
+    elif title in mrs_titles:
+        return "Mrs"
+    else:
+        return title
+
+def categorise_age(age):
+    if age <=16:
+        return 0
+    elif (age > 16) & (age <= 32):
+        return 1
+    elif (age > 32) & (age <= 48):
+        return 2
+    elif (age > 48) & (age <= 64):
+        return 3
+    else:
+        return 4
+    
+
+def categorise_fare(fare):
+    if fare <= 7.91:
+        return 0
+    elif (fare > 7.91) & (fare <= 14.454):
+        return 1
+    elif (fare > 14.454) & (fare <= 31):
+        return 2
+    elif fare > 31:
+        return 3
+
+
 def remove_unspecified_features(dataframe, columns_to_enginner):
     all_possible_features = set(["family_size", "is_alone"])
 
     features_to_remove = all_possible_features - set(columns_to_enginner) 
 
     return dataframe.drop(features_to_remove, axis=1)
+
+def categorise_features(dataframe):
+    # Age
+    dataframe["Age"] = dataframe["Age"].apply(categorise_age)
+    # Fare
+    dataframe["Fare"] = dataframe["Fare"].apply(categorise_fare)
+    # Title
+    dataframe["Name"] = dataframe["Name"].apply(categorise_title)
+    return dataframe
 
 def one_hot_encode(dataframe, features):
 
@@ -47,7 +106,10 @@ def reconcile_test_set(df_train, df_test):
         df_test[column] = 0
 
     df_test = df_test.drop(columns_to_remove, axis=1)
-    reordered_test_df = df_test[train_columns] 
+
+    ordered_columns = list(train_columns)
+    ordered_columns.remove("Survived")
+    reordered_test_df = df_test[ordered_columns] 
 
     return reordered_test_df
 

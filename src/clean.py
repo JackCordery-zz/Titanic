@@ -5,13 +5,13 @@ def clean(dataframe, columns_to_drop=[], maps={}):
     #FILL
     df_filled = fill_columns(dataframe)
 
-    #DROP
-    df_dropped = drop_columns(df_filled, columns_to_drop)
-
     #MAP
-    df_mapped = map_columns(df_dropped, maps)
+    df_mapped = map_columns(df_filled, maps)
 
-    return df_mapped
+    #DROP
+    df_dropped = df_mapped.drop(columns_to_drop, axis=1)
+
+    return df_dropped
 
 def fill_columns(dataframe):
     #Age
@@ -27,9 +27,6 @@ def fill_columns(dataframe):
     dataframe["Fare"] = dataframe["Fare"].fillna(fare_value)
 
     return dataframe
-
-def drop_columns(dataframe, columns_to_drop):
-    return dataframe.drop(columns_to_drop, axis=1)
 
 def map_columns(dataframe, maps):
     # maps = {"column_name" : {'s' : 0, ...}} = {"column_name" : map}
