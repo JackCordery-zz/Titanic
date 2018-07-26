@@ -3,13 +3,14 @@ import config
 from clean import map_columns
 
 def feature_engineer(dataframe, columns_to_engineer=[], features_to_ohe=[]):
-    dataframe["family_size"] = family_size(dataframe["SibSp"],
-                                           dataframe["Parch"])
-    dataframe["is_alone"] = dataframe["family_size"].apply(is_alone).astype(int)
+    
+    dataframe = create_new_features(dataframe)
 
     dataframe = remove_unspecified_features(dataframe, columns_to_engineer)
 
     dataframe = one_hot_encode(dataframe, features_to_ohe)
+
+    dataframe = categorise_features(dataframe)
 
     return dataframe
 
@@ -78,6 +79,13 @@ def remove_unspecified_features(dataframe, columns_to_enginner):
     features_to_remove = all_possible_features - set(columns_to_enginner) 
 
     return dataframe.drop(features_to_remove, axis=1)
+
+def create_new_features(dataframe):
+    dataframe["family_size"] = family_size(dataframe["SibSp"],
+                                           dataframe["Parch"])
+
+    dataframe["is_alone"] = dataframe["family_size"].apply(is_alone).astype(int)
+    return dataframe
 
 def categorise_features(dataframe):
     # Age
