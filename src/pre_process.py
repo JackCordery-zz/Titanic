@@ -2,6 +2,15 @@ import config
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+def load_data(config):
+    training_set_path = config.TRAIN_INPUT_PATH
+    test_set_path = config.TEST_INPUT_PATH
+
+    df_train = pd.read_csv(training_set_path)
+    df_test = pd.read_csv(test_set_path)
+
+    return df_train, df_test
+
 def pre_process(df_train, df_test, config):
     split = 1 - config.TRAIN_VAL_SPLIT
     random_seed = config.RANDOM_SEED

@@ -2,19 +2,10 @@ import pandas as pd
 import config
 from clean import clean
 from engineer import feature_engineer, reconcile_test_set
-from pre_process import pre_process
+from pre_process import pre_process, load_data
 from model import assemble_models, fit_models
 from model_validation import hyperparameter_tuning, feature_selection, fit_modelsCV
 import numpy as np
-
-def load_data(config):
-    training_set_path = config.TRAIN_INPUT_PATH
-    test_set_path = config.TEST_INPUT_PATH
-
-    df_train = pd.read_csv(training_set_path)
-    df_test = pd.read_csv(test_set_path)
-
-    return df_train, df_test
 
 def main():
     df_train, df_test = load_data(config)
