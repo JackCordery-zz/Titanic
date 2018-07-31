@@ -1,6 +1,7 @@
 import pandas as pd
 import config 
 from clean import map_columns
+import re
 
 def feature_engineer(dataframe, columns_to_engineer=[], features_to_ohe=[]):
     

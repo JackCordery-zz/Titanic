@@ -8,7 +8,7 @@ def initialise_logistic_model(config, penalty='l2', C=1.0):
     return model
 
 
-def assemble_models():
+def assemble_models(config):
     logistic_regresion = initialise_logistic_model(config)
     return [logistic_regresion]
 
@@ -18,9 +18,11 @@ def fit_models(X_train, X_val, y_train, y_val, models):
     trained_models = {}
     for model in models:
         name = model.__class__.__name__
-        model.fit(X, y)
+        print(X_train)
+        print(y_train)
+        model.fit(X_train, y_train)
 
-        y_train_predicitions = model.predict(X)
+        y_train_predicitions = model.predict(X_train)
         y_val_predicitions = model.predict(X_val)
 
         training_accuracy = accuracy_score(y_train, y_train_predicitions)
