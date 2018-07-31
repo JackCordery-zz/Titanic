@@ -3,6 +3,7 @@ import config
 from clean import clean
 from engineer import feature_engineer, reconcile_test_set
 from pre_process import pre_process
+from model import assemble_models, fit_models, model_tuning, feature_selection
 
 def load_data(config):
     training_set_path = config.TRAIN_INPUT_PATH
@@ -24,6 +25,14 @@ def main():
     df_test = reconcile_test_set(df_train, df_test)
 
     data = pre_process(df_train, df_test, config)
+
+    models = assemble_models()
+    trained_models, traning_acc, validation_acc = fit_models(data["X_train"],
+                                                             data["X_val"],
+                                                             data["y_train"],
+                                                             data["y_val"])
+
+    
 
     return
 
