@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
+from sklearn.feature_selection import RFECV
 
 
 sss = StratifiedShuffleSplit(n_splits=config.K_FOLD,
@@ -82,25 +83,24 @@ def model_tuning(models, param_grids, X, y):
 def feature_selection(models, X, y):
     support = {}
     ranking = {}
-    score_train = {}
-    score_val = {}
+    scores = {}
     transformed_X = {}
     total_number_features = X.shape[1]
     for model in models:
         for n in total_number_features:
             name = model.__class__.__name__
-            name = name + "-" + str(n) 
-            fit = RFE(model,n)
+            fit = RFECV(model,step=n, cv=config.K_FOLD)
+            name = name + "-" + str(fit.n_features_) 
             x_transform = fit.fit_transform(X, y)
 
             support[name] = fit.support_
             ranking[name] = fit.ranking_
-            score_train[name] = fit.score(X, y)
-            score_val[name] = fit.score(X_val, y_val)
+            score_mean[name] = np.mean(fit.grid_scores_)
+            score_std[name] = np.std(fit.grid_scores_)
             transformed_X[name] = x_transform
 
     stats = {"support": support, "ranking": ranking,
-             "score_train": score_train, "score_val": score_val,
+             "score_mean": score_mean, "score_std": score_mean,
              "transformed_X": transformed_X}
 
     return stats
