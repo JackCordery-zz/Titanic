@@ -61,26 +61,22 @@ def fit_models(X_train, X_val, y_train, y_val, models):
     return trained_models, training_accuracies, validation_accuracies
 
 def model_tuning(models, param_grids, X, y):
+    # What do param_grids look like?
     best_parameters = {}
     train_scores = {}
     validation_scores = {}
     for model in models:
         name = model.__class__.__name__
         clf = GridSearchCV(model, param_grids[name])
-        best_model = clf.fit(X, y)
-        best_parameter = best_model.best_estimator_.get_params()
-
-        y_train_prediction = model.predict(X)
-        y_validation_prediction = model.predict(X_val)
-
-        train_score = accuracy_score(y_train, y_train_prediction)
-        validation_score = accuracy_score(y_val, y_val_predicition)
+        clf.fit(X, y)
+        results = clf.cv_results_
+        best_parameter = clf.best_estimator_.get_params()
+        best_score = clf.best_score()
 
         best_parameters[name] = best_parameter
-        train_scores[name] = train_score
-        validation_scores[name] = validation_score
+        scores[name] = best_score
 
-    return best_parameters, train_scores, validation_scores
+    return best_parameters, scores
 
 
 def feature_selection(models, X, y):
