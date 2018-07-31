@@ -64,15 +64,14 @@ def fit_models(X_train, X_val, y_train, y_val, models):
 def model_tuning(models, param_grids, X, y):
     # What do param_grids look like?
     best_parameters = {}
-    train_scores = {}
-    validation_scores = {}
+    scores = {}
     for model in models:
         name = model.__class__.__name__
         clf = GridSearchCV(model, param_grids[name])
         clf.fit(X, y)
         results = clf.cv_results_
         best_parameter = clf.best_estimator_.get_params()
-        best_score = clf.best_score()
+        best_score = clf.best_score_
 
         best_parameters[name] = best_parameter
         scores[name] = best_score
@@ -83,15 +82,16 @@ def model_tuning(models, param_grids, X, y):
 def feature_selection(models, X, y):
     support = {}
     ranking = {}
-    scores = {}
+    score_mean = {}
+    score_std = {}
     transformed_X = {}
     total_number_features = X.shape[1]
     for model in models:
-        for n in total_number_features:
+        for n in range(1, total_number_features):
             name = model.__class__.__name__
             fit = RFECV(model,step=n, cv=config.K_FOLD)
-            name = name + "-" + str(fit.n_features_) 
             x_transform = fit.fit_transform(X, y)
+            name = name + "-" + str(fit.n_features_) 
 
             support[name] = fit.support_
             ranking[name] = fit.ranking_
