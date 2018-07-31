@@ -31,7 +31,7 @@ def fill_columns(dataframe):
 def map_columns(dataframe, maps):
     # maps = {"column_name" : {'s' : 0, ...}} = {"column_name" : map}
     for col, map_of_column in maps.items():
-        dataframe[col] = dataframe[col].map(map_of_column).astype(int)
+        dataframe[col] = dataframe[col].map(map_of_column)
     return dataframe
 
 def main():

@@ -19,8 +19,7 @@ def main():
 
     columns_to_drop = ["Embarked", "Ticket", "Cabin"]
     maps = {"Embarked": {'S': 0, 'C':1, 'Q':2},
-            "Name": {"Mr": 1, "Miss": 2, "Mrs": 3, "Master": 4, "Rare": 5}
-            "Sex": {"female": 0, "male": 1}}
+            "Sex":{"female": 0, "male": 1}}
     columns_to_engineer=["family_size", "is_alone"]
     features_to_ohe=["Age", "Fare"]
 
@@ -34,13 +33,14 @@ def main():
     data = pre_process(df_train, df_test, config)
 
     models = assemble_models(config)
-    trained_models, traning_acc, validation_acc = fit_models(data["X_train"],
+    trained_models, training_acc, validation_acc = fit_models(data["X_train"],
                                                              data["X_val"],
                                                              data["y_train"],
                                                              data["y_val"],
                                                              models)
 
 
+    print(training_acc)
 
     return
 

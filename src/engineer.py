@@ -7,11 +7,12 @@ def feature_engineer(dataframe, columns_to_engineer=[], features_to_ohe=[]):
     
     dataframe = create_new_features(dataframe)
 
+
     dataframe = remove_unspecified_features(dataframe, columns_to_engineer)
 
-    dataframe = one_hot_encode(dataframe, features_to_ohe)
-
     dataframe = categorise_features(dataframe)
+
+    dataframe = one_hot_encode(dataframe, features_to_ohe)
 
     return dataframe
 
@@ -49,6 +50,7 @@ def categorise_title(name):
         return "Mrs"
     else:
         return title
+
 
 def categorise_age(age):
     if age <=16:
@@ -94,7 +96,8 @@ def categorise_features(dataframe):
     # Fare
     dataframe["Fare"] = dataframe["Fare"].apply(categorise_fare)
     # Title
-    dataframe["Name"] = dataframe["Name"].apply(categorise_title)
+    title_map = {"Mr": 1, "Miss": 2, "Mrs": 3, "Master": 4, "Rare": 5}
+    dataframe["Name"] = dataframe["Name"].apply(categorise_title).map(title_map)
     return dataframe
 
 def one_hot_encode(dataframe, features):
