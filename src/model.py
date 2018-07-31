@@ -1,6 +1,11 @@
+import config
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
+
+sss = StratifiedShuffleSplit(n_splits=config.K_FOLD,
+                             test_size=0.1,
+                             random_state=config.RANDOM_SEED)
 
 def initialise_logistic_model(config, penalty='l2', C=1.0):
     random_seed = config.RANDOM_SEED
@@ -12,16 +17,31 @@ def assemble_models(config):
     logistic_regresion = initialise_logistic_model(config)
     return [logistic_regresion]
 
+def fit_modelsCV(X, y, models):
+    test_accuracies = {}
+    trained_models = {}
+    for train_index, test_index in sss:
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        for model in models:
+            name = model.__class__.__name__
+            model.fit(X_train, y_train)
+            y_test_predicitions = model.predict(X_val)
+            test_accuracy = accuracy_score(y_test, y_test_predicitions) 
+            if name in test_accuracies:
+                 test_accuracies[name] += test_accuracy
+            else:
+                test_accuracies[name] = test_accuracy
+
+    return {n: (a/config.K_FOLD) for (n,a) in test_accuracies.items()}
+
 def fit_models(X_train, X_val, y_train, y_val, models):
     training_accuracies = {}
     validation_accuracies = {}
     trained_models = {}
     for model in models:
         name = model.__class__.__name__
-        print(X_train)
-        print(y_train)
         model.fit(X_train, y_train)
-
         y_train_predicitions = model.predict(X_train)
         y_val_predicitions = model.predict(X_val)
 
@@ -34,7 +54,7 @@ def fit_models(X_train, X_val, y_train, y_val, models):
 
     return trained_models, training_accuracies, validation_accuracies
 
-def model_tuning(models, param_grids, X, X_val, y, y_val):
+def model_tuning(models, param_grids, X, y):
     best_models = {}
     best_parameters = {}
     train_scores = {}
@@ -59,7 +79,7 @@ def model_tuning(models, param_grids, X, X_val, y, y_val):
     return best_models, best_parameters, train_scores, validation_scores
 
 
-def feature_selection(models, X, X_val, y, y_val):
+def feature_selection(models, X, y):
     support = {}
     ranking = {}
     score_train = {}
