@@ -58,18 +58,30 @@ def model_tuning(models, param_grids, X, X_val, y, y_val):
 
 
 def feature_selection(models, X, X_val, y, y_val):
-    stats = {}
+    support = {}
+    ranking = {}
+    score_train = {}
+    score_val = {}
+    transformed_X = {}
     total_number_features = X.shape[1]
     for model in models:
         for n in total_number_features:
-            selector = RFE(model,n)
-            fit = selector.fit(X, y)
-            
+            name = model.__class__.__name__
+            name = name + "-" + str(n) 
+            fit = RFE(model,n)
+            x_transform = fit.fit_transform(X, y)
 
+            support[name] = fit.support_
+            ranking[name] = fit.ranking_
+            score_train[name] = fit.score(X, y)
+            score_val[name] = fit.score(X_val, y_val)
+            transformed_X[name] = x_transform
 
+    stats = {"support": support, "ranking": ranking,
+             "score_train": score_train, "score_val": score_val,
+             "transformed_X": transformed_X}
 
-
-    return 
+    return stats
 
 
 def main():
