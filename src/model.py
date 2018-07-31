@@ -63,14 +63,18 @@ def fit_models(X_train, X_val, y_train, y_val, models):
 
 def model_tuning(models, param_grids, X, y):
     # What do param_grids look like?
+    
     best_parameters = {}
     scores = {}
     for model in models:
         name = model.__class__.__name__
-        clf = GridSearchCV(model, param_grids[name])
+        params = param_grids[name]
+        param_names = list(params.keys())
+        clf = GridSearchCV(model, params)
         clf.fit(X, y)
         results = clf.cv_results_
         best_parameter = clf.best_estimator_.get_params()
+        best_parameter = {k:v for k,v in best_parameter.items() if k in param_names}
         best_score = clf.best_score_
 
         best_parameters[name] = best_parameter
@@ -81,7 +85,6 @@ def model_tuning(models, param_grids, X, y):
 
 def feature_selection(models, X, y):
     support = {}
-    ranking = {}
     score_mean = {}
     score_std = {}
     transformed_X = {}
@@ -94,12 +97,11 @@ def feature_selection(models, X, y):
             name = name + "-" + str(fit.n_features_) 
 
             support[name] = fit.support_
-            ranking[name] = fit.ranking_
             score_mean[name] = np.mean(fit.grid_scores_)
             score_std[name] = np.std(fit.grid_scores_)
             transformed_X[name] = x_transform
 
-    stats = {"support": support, "ranking": ranking,
+    stats = {"support": support, 
              "score_mean": score_mean, "score_std": score_mean,
              "transformed_X": transformed_X}
 
