@@ -1,7 +1,9 @@
 import config
+import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
+
 
 sss = StratifiedShuffleSplit(n_splits=config.K_FOLD,
                              test_size=0.1,
@@ -20,20 +22,24 @@ def assemble_models(config):
 def fit_modelsCV(X, y, models):
     test_accuracies = {}
     trained_models = {}
-    for train_index, test_index in sss:
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
+    
+    for train_index, test_index in sss.split(X,y):
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         for model in models:
             name = model.__class__.__name__
             model.fit(X_train, y_train)
-            y_test_predicitions = model.predict(X_val)
+            y_test_predicitions = model.predict(X_test)
             test_accuracy = accuracy_score(y_test, y_test_predicitions) 
             if name in test_accuracies:
-                 test_accuracies[name] += test_accuracy
+                test_accuracies[name] += [test_accuracy]
             else:
-                test_accuracies[name] = test_accuracy
+                test_accuracies[name] = [test_accuracy]
 
-    return {n: (a/config.K_FOLD) for (n,a) in test_accuracies.items()}
+    means = {name: np.mean(np.array(list_of_acc)) for name, list_of_acc in test_accuracies.items()}
+    stds = {name: np.std(np.array(list_of_acc)) for name, list_of_acc in test_accuracies.items()}
+
+    return means, stds
 
 def fit_models(X_train, X_val, y_train, y_val, models):
     training_accuracies = {}
@@ -55,7 +61,6 @@ def fit_models(X_train, X_val, y_train, y_val, models):
     return trained_models, training_accuracies, validation_accuracies
 
 def model_tuning(models, param_grids, X, y):
-    best_models = {}
     best_parameters = {}
     train_scores = {}
     validation_scores = {}
@@ -71,12 +76,11 @@ def model_tuning(models, param_grids, X, y):
         train_score = accuracy_score(y_train, y_train_prediction)
         validation_score = accuracy_score(y_val, y_val_predicition)
 
-        best_models[name] = best_model
         best_parameters[name] = best_parameter
         train_scores[name] = train_score
         validation_scores[name] = validation_score
 
-    return best_models, best_parameters, train_scores, validation_scores
+    return best_parameters, train_scores, validation_scores
 
 
 def feature_selection(models, X, y):
