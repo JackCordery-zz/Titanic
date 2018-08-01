@@ -159,6 +159,7 @@ def binary_class(prob, t):
         return 0
 
 def acc_score_threshold(model, X, y):
+    #TODO: This needs to be done with CV 
     thresholds = np.arange(0.1,0.95,0.01)
     accuracies = []
     for t in thresholds:

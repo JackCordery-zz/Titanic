@@ -24,25 +24,20 @@ def score_test_set(model, X_test, id_col, columns, threshold=0.5):
     return df
 
 
-def fit_models(X_train, X_val, y_train, y_val, models):
+def fit_models(models, X_train, y_train):
     training_accuracies = {}
-    validation_accuracies = {}
     trained_models = {}
     for model in models:
         name = model.__class__.__name__
         model.fit(X_train, y_train)
         y_train_predicitions = model.predict(X_train)
-        y_val_predicitions = model.predict(X_val)
 
         training_accuracy = accuracy_score(y_train, y_train_predicitions)
-        validation_accuracy = accuracy_score(y_val, y_val_predicitions)
         
-        training_accuracies[name] = training_accuracy
-        validation_accuracies[name] = validation_accuracy
         trained_models[name] = model
+        training_accuracies[name] = training_accuracy
 
-    return trained_models, training_accuracies, validation_accuracies
-
+    return trained_models, training_accuracies
 
 def main():
     print("Nothing to see here: Model")
