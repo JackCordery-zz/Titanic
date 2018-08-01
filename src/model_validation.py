@@ -1,4 +1,5 @@
 import config
+from itertools import compress
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
@@ -56,7 +57,9 @@ def feature_selection(models, X, y):
     score_mean = {}
     score_std = {}
     transformed_X = {}
+    features = {}
     total_number_features = X.shape[1]
+    feature_names = list(X.columns)
     for model in models:
         for n in range(1, total_number_features):
             name = model.__class__.__name__
@@ -68,12 +71,19 @@ def feature_selection(models, X, y):
             score_mean[name] = np.mean(fit.grid_scores_)
             score_std[name] = np.std(fit.grid_scores_)
             transformed_X[name] = x_transform
+            features[name] = support_to_features(fit.support_, feature_names)
 
-    stats = {"support": support, 
+    stats = {"support": support,
+             "features": features,    
              "score_mean": score_mean, "score_std": score_mean,
              "transformed_X": transformed_X}
 
     return stats
+
+def support_to_features(support, feature_names):
+    features = list(compress(feature_names, support))
+    return features
+
 
 def main():
     print("Nothing to find here: Model Validation")
