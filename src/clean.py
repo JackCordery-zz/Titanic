@@ -19,7 +19,7 @@ def fill_columns(dataframe):
     dataframe["Age"] = dataframe["Age"].fillna(age_value)
 
     #Embarked
-    embarked_value = 'S'
+    embarked_value = 'U'
     dataframe["Embarked"] = dataframe["Embarked"].fillna(embarked_value)
 
     #Fare

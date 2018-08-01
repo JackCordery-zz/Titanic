@@ -7,7 +7,6 @@ def feature_engineer(dataframe, columns_to_engineer=[], features_to_ohe=[]):
     
     dataframe = create_new_features(dataframe)
 
-
     dataframe = remove_unspecified_features(dataframe, columns_to_engineer)
 
     dataframe = categorise_features(dataframe)
@@ -109,7 +108,7 @@ def one_hot_encode(dataframe, features):
 
 def reconcile_test_set(df_train, df_test):
     train_columns = df_train.columns
-    test_columns = df_train.columns
+    test_columns = df_test.columns
 
     columns_to_remove = set(test_columns) - set(train_columns)
     columns_to_add = set(train_columns) - set(test_columns)

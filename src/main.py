@@ -11,11 +11,10 @@ import numpy as np
 def process(config, mode="experiment"):
     df_train, df_test = load_data(config)
 
-    columns_to_drop = ["Embarked", "Ticket", "Cabin"]
-    maps = {"Embarked": {'S': 0, 'C':1, 'Q':2},
-            "Sex":{"female": 0, "male": 1}}
+    columns_to_drop = ["Ticket", "Cabin"]
+    maps = {"Sex":{"female": 0, "male": 1}}
     columns_to_engineer=["family_size", "is_alone"]
-    features_to_ohe=["Age", "Fare", "Name"]
+    features_to_ohe=["Age", "Fare", "Name", "Embarked"]
 
     df_train_clean = clean(df_train, columns_to_drop=columns_to_drop, maps=maps)
     df_test_clean = clean(df_test, columns_to_drop=columns_to_drop, maps=maps)
