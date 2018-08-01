@@ -1,7 +1,9 @@
 import config
 import numpy as np
+import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
+from model_validation import binary_class
 
 
 def initialise_logistic_model(config, penalty='l2', C=1.0):
@@ -14,6 +16,12 @@ def assemble_models(config):
     logistic_regresion = initialise_logistic_model(config)
     return [logistic_regresion]
 
+def score_test_set(model, X_test, id_col, columns, threshold=0.5):
+    y_proba = model.predict_proba(X_test)[:,1]
+    y = [binary_class(p, threshold) for p in y_proba]
+    df = pd.DataFrame(np.vstack((id_col, y)).T)
+    df.columns = columns
+    return df
 
 
 def fit_models(X_train, X_val, y_train, y_val, models):

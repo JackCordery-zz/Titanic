@@ -1,7 +1,12 @@
 import config
 from itertools import compress
+import matplotlib.pyplot as plt
+plt.style.use("ggplot")
 import numpy as np
-from sklearn.metrics import accuracy_score
+import pandas as pd
+from sklearn.metrics import accuracy_score, precision_score, accuracy_score, \
+                            recall_score, roc_auc_score, make_scorer, \
+                            roc_curve, precision_recall_curve
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
 from sklearn.feature_selection import RFECV
 
@@ -31,26 +36,43 @@ def fit_modelsCV(X, y, models):
 
     return means, stds
 
-def hyperparameter_tuning(models, param_grids, X, y):
+def hyperparameter_tuning(models, param_grids, X, y, refit='accuracy_score'):
     # params_grid={model_name:{param_grid}, ...}
     
     best_parameters = {}
     scores = {}
+    full_results = {}
+
+    scorers = {"accuracy_score": make_scorer(accuracy_score),
+               "precision_score": make_scorer(precision_score),
+               "recall_score": make_scorer(recall_score),
+               "auc_score": make_scorer(roc_auc_score)}
+
+
+    columns_to_get_from_results = list(scorers.keys())
+    prefixes_to_get = ["mean_test_", "mean_train_", "std_test_", "std_train_"]
+    columns_to_get_from_results = [pre + col for pre in prefixes_to_get for col in columns_to_get_from_results]
+
+
     for model in models:
         name = model.__class__.__name__
         params = param_grids[name]
         param_names = list(params.keys())
-        clf = GridSearchCV(model, params)
+        param_columns = [ "param_" + p for p in param_names]
+        columns_to_get_from_results = param_columns + columns_to_get_from_results
+        clf = GridSearchCV(model, params, scoring=scorers, cv=sss, refit=refit,
+                           return_train_score=True)
         clf.fit(X, y)
-        results = clf.cv_results_
+        result = pd.DataFrame(clf.cv_results_)[columns_to_get_from_results]
         best_parameter = clf.best_estimator_.get_params()
         best_parameter = {k:v for k,v in best_parameter.items() if k in param_names}
         best_score = clf.best_score_
-
         best_parameters[name] = best_parameter
         scores[name] = best_score
+        full_results[name] = result
 
-    stats = {"best_parameters": best_parameters, "scores": scores}
+    stats = {"best_parameters": best_parameters, "scores": scores,
+             "full_results": full_results}
 
     return stats
 
@@ -86,6 +108,66 @@ def feature_selection(models, X, y):
 def support_to_features(support, feature_names):
     features = list(compress(feature_names, support))
     return features
+
+def plot_roc(model, X, y):
+
+    y_predicted = model.predict_proba(X)
+
+    fpr, tpr, _ = roc_curve(y, y_predicted[:,1])
+    area_under_curve = roc_auc_score(y, y_predicted[:,1])
+
+    plt.figure()
+    plt.plot(fpr, tpr, color='darkorange', lw=2,
+             label='ROC Curve (area = {})'.format(area_under_curve))
+    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Reciever Operating Characteristic')
+    plt.legend(loc="lower right")
+    return plt
+
+def plot_prec_rec(model, X, y):
+
+    y_predicted = model.predict_proba(X)
+
+    precision, recall, thresholds = precision_recall_curve(y, y_predicted[:,1])
+    acc, thresholds_acc = acc_score_threshold(model, X, y)
+    max_acc = max(acc)
+    max_threshold = thresholds_acc[np.argmax(acc)]
+
+    plt.figure()
+    plt.plot(thresholds, precision[:-1], color='green', lw=2,
+             label="Precision")
+    plt.plot(thresholds, recall[:-1], color='navy', lw=2,
+             label="Recall")
+    plt.plot(thresholds_acc, acc, color='darkorange', linestyle='--',
+             label="Accuracy (max: {}, threshold: {}".format(max_acc, max_threshold))
+    plt.xticks(np.arange(0,1,0.05), rotation=90)
+    plt.yticks(np.arange(0,1,0.05))
+    plt.xlabel('Threshold')
+    plt.ylabel('Score')
+    plt.title('Precision and Recall vs Threshold')
+    plt.legend(loc="best")
+    return plt
+
+def binary_class(prob, t):
+    if prob >= t:
+        return 1
+    else:
+        return 0
+
+def acc_score_threshold(model, X, y):
+    thresholds = np.arange(0.1,0.95,0.01)
+    accuracies = []
+    for t in thresholds:
+        y_pred = model.predict_proba(X)[:,1]
+        y_pred_label = [binary_class(p, t) for p in y_pred]
+        acc = [accuracy_score(y, y_pred_label)]
+        accuracies += acc
+    return accuracies, thresholds
+
 
 
 def main():
