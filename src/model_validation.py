@@ -32,7 +32,7 @@ def fit_modelsCV(X, y, models):
     return means, stds
 
 def hyperparameter_tuning(models, param_grids, X, y):
-    # What do param_grids look like?
+    # params_grid={model_name:{param_grid}, ...}
     
     best_parameters = {}
     scores = {}
@@ -52,7 +52,7 @@ def hyperparameter_tuning(models, param_grids, X, y):
 
     stats = {"best_parameters": best_parameters, "scores": scores}
 
-    return stata
+    return stats
 
 def feature_selection(models, X, y):
     support = {}

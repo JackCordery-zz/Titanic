@@ -10,7 +10,8 @@ def log_results():
     return
 
 def log_hyper_tuning(stats):
-    
+    return
+
 
 def log_feature_selection(stats):
     all_features = stats["all_features"]

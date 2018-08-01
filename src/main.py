@@ -33,6 +33,8 @@ def main():
 
     log_feature_selection(stats_feature)
 
+    print(stats_hyper)
+
     return
 
 if __name__ == '__main__':
