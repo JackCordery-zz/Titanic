@@ -3,6 +3,7 @@ import config
 
 def clean(dataframe, columns_to_drop=[], maps={}):
     #FILL
+    #TODO: Account for adding same fills to test instead of own stats
     df_filled = fill_columns(dataframe)
 
     #MAP
@@ -16,15 +17,19 @@ def clean(dataframe, columns_to_drop=[], maps={}):
 def fill_columns(dataframe):
     #Age
     age_value = dataframe["Age"].median()
-    dataframe["Age"] = dataframe["Age"].fillna(age_value)
+    dataframe["Age"] = dataframe.groupby(["Sex", "Pclass"])["Age"].apply(lambda x: x.fillna(x.median()))
+    #dataframe["Age"] = dataframe["Age"].fillna(age_value)
 
     #Embarked
-    embarked_value = 'U'
+    embarked_value = 'S'
     dataframe["Embarked"] = dataframe["Embarked"].fillna(embarked_value)
 
     #Fare
     fare_value = dataframe["Fare"].median()
     dataframe["Fare"] = dataframe["Fare"].fillna(fare_value)
+
+    #Cabin 
+    dataframe["Cabin"] = dataframe["Cabin"].fillna('U')
 
     return dataframe
 

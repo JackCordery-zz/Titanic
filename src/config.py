@@ -6,4 +6,4 @@ RANDOM_SEED = 42
 K_FOLD = 5
 MODEL = "LogisticRegression"
 LOG_PATH = "logs/"
-THRESHOLD = 0.5
+THRESHOLD = 0.48999
