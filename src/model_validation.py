@@ -50,7 +50,9 @@ def hyperparameter_tuning(models, param_grids, X, y):
         best_parameters[name] = best_parameter
         scores[name] = best_score
 
-    return best_parameters, scores
+    stats = {"best_parameters": best_parameters, "scores": scores}
+
+    return stata
 
 def feature_selection(models, X, y):
     support = {}
@@ -74,7 +76,8 @@ def feature_selection(models, X, y):
             features[name] = support_to_features(fit.support_, feature_names)
 
     stats = {"support": support,
-             "features": features,    
+             "features": features,
+             "all_features": feature_names,    
              "score_mean": score_mean, "score_std": score_mean,
              "transformed_X": transformed_X}
 
