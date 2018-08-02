@@ -52,7 +52,9 @@ def categorise_title(name):
 
 
 def categorise_age(age):
-    if age <=16:
+    if age == 'U':
+        return 5
+    elif age <=16:
         return 0
     elif (age > 16) & (age <= 32):
         return 1
@@ -98,7 +100,10 @@ def categorise_features(dataframe):
     title_map = {"Mr": 1, "Miss": 2, "Mrs": 3, "Master": 4, "Rare": 5}
     dataframe["Name"] = dataframe["Name"].apply(categorise_title).map(title_map)
     #Cabin
-    dataframe["Cabin"] = dataframe["Cabin"].map(lambda x: x[0])
+    try:
+        dataframe["Cabin"] = dataframe["Cabin"].map(lambda x: x[0])
+    except:
+        pass
     return dataframe
 
 def one_hot_encode(dataframe, features):

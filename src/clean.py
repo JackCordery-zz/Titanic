@@ -1,10 +1,11 @@
 import pandas as pd
 import config 
 
-def clean(dataframe, columns_to_drop=[], maps={}):
+def clean(dataframe, fill_values={}, columns_to_drop=[], maps={}, custom=[]):
     #FILL
     #TODO: Account for adding same fills to test instead of own stats
-    df_filled = fill_columns(dataframe)
+
+    df_filled = fill_columns(dataframe, fill_values)
 
     #MAP
     df_mapped = map_columns(df_filled, maps)
@@ -14,23 +15,9 @@ def clean(dataframe, columns_to_drop=[], maps={}):
 
     return df_dropped
 
-def fill_columns(dataframe):
-    #Age
-    age_value = dataframe["Age"].median()
-    dataframe["Age"] = dataframe.groupby(["Sex", "Pclass"])["Age"].apply(lambda x: x.fillna(x.median()))
-    #dataframe["Age"] = dataframe["Age"].fillna(age_value)
-
-    #Embarked
-    embarked_value = 'S'
-    dataframe["Embarked"] = dataframe["Embarked"].fillna(embarked_value)
-
-    #Fare
-    fare_value = dataframe["Fare"].median()
-    dataframe["Fare"] = dataframe["Fare"].fillna(fare_value)
-
-    #Cabin 
-    dataframe["Cabin"] = dataframe["Cabin"].fillna('U')
-
+def fill_columns(dataframe, fill_values={}):
+    for column_name, value in fill_values.items():
+        dataframe[column_name] = dataframe[column_name].fillna(value)
     return dataframe
 
 def map_columns(dataframe, maps):
