@@ -1,10 +1,9 @@
 import pandas as pd
-import config 
-from clean import map_columns
 import re
 
+
 def feature_engineer(dataframe, columns_to_engineer=[], features_to_ohe=[]):
-    
+
     dataframe = create_new_features(dataframe)
 
     dataframe = remove_unspecified_features(dataframe, columns_to_engineer)
@@ -15,14 +14,17 @@ def feature_engineer(dataframe, columns_to_engineer=[], features_to_ohe=[]):
 
     return dataframe
 
+
 def family_size(sibsp, parch):
     return sibsp + parch + 1
+
 
 def is_alone(family_size):
     if family_size == 1:
         return 1
     else:
         return 0
+
 
 def get_title(name):
     title_search = re.search(' ([A-Za-z]+)\.', name)
@@ -32,12 +34,13 @@ def get_title(name):
     else:
         return ""
 
+
 def categorise_title(name):
 
     title = get_title(name)
 
-    rare_titles = ['Lady', 'Countess', 'Capt', 'Col', 'Don', 'Dr', 'Major','Rev',
-                  'Sir', 'Jonkheer', 'Dona']
+    rare_titles = ['Lady', 'Countess', 'Capt', 'Col', 'Don', 'Dr', 'Major',
+                   'Rev', 'Sir', 'Jonkheer', 'Dona']
     miss_titles = ['Mlle', 'Ms']
     mrs_titles = ['Mme']
 
@@ -54,7 +57,7 @@ def categorise_title(name):
 def categorise_age(age):
     if age == 'U':
         return 5
-    elif age <=16:
+    elif age <= 16:
         return 0
     elif (age > 16) & (age <= 32):
         return 1
@@ -64,7 +67,7 @@ def categorise_age(age):
         return 3
     else:
         return 4
-    
+
 
 def categorise_fare(fare):
     if fare <= 7.91:
@@ -80,31 +83,45 @@ def categorise_fare(fare):
 def remove_unspecified_features(dataframe, columns_to_enginner):
     all_possible_features = set(["family_size", "is_alone"])
 
-    features_to_remove = all_possible_features - set(columns_to_enginner) 
+    features_to_remove = all_possible_features - set(columns_to_enginner)
 
     return dataframe.drop(features_to_remove, axis=1)
+
 
 def create_new_features(dataframe):
     dataframe["family_size"] = family_size(dataframe["SibSp"],
                                            dataframe["Parch"])
 
-    dataframe["is_alone"] = dataframe["family_size"].apply(is_alone).astype(int)
+    dataframe["is_alone"] = dataframe["family_size"].apply(is_alone)\
+                                                    .astype(int)
     return dataframe
+
 
 def categorise_features(dataframe):
     # Age
-    dataframe["Age"] = dataframe["Age"].apply(categorise_age)
+    try:
+        dataframe["Age"] = dataframe["Age"].apply(categorise_age)
+    except Exception:
+        pass
     # Fare
-    dataframe["Fare"] = dataframe["Fare"].apply(categorise_fare)
+    try:
+        dataframe["Fare"] = dataframe["Fare"].apply(categorise_fare)
+    except Exception:
+        pass
     # Title
     title_map = {"Mr": 1, "Miss": 2, "Mrs": 3, "Master": 4, "Rare": 5}
-    dataframe["Name"] = dataframe["Name"].apply(categorise_title).map(title_map)
-    #Cabin
+    try:
+        dataframe["Name"] = dataframe["Name"].apply(categorise_title)\
+                                             .map(title_map)
+    except Exception:
+        pass
+    # Cabin
     try:
         dataframe["Cabin"] = dataframe["Cabin"].map(lambda x: x[0])
-    except:
+    except Exception:
         pass
     return dataframe
+
 
 def one_hot_encode(dataframe, features):
 
@@ -112,6 +129,7 @@ def one_hot_encode(dataframe, features):
         dummies = pd.get_dummies(dataframe[feature], feature)
         dataframe = pd.concat([dataframe, dummies], axis=1)
     return dataframe.drop(features, axis=1)
+
 
 def reconcile_test_set(df_train, df_test):
     train_columns = df_train.columns
@@ -127,13 +145,15 @@ def reconcile_test_set(df_train, df_test):
 
     ordered_columns = list(train_columns)
     ordered_columns.remove("Survived")
-    reordered_test_df = df_test[ordered_columns] 
+    reordered_test_df = df_test[ordered_columns]
 
     return reordered_test_df
+
 
 def main():
     print("Nothing to see here: Feature Engineer")
     return
+
 
 if __name__ == '__main__':
     main()

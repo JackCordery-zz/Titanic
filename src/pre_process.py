@@ -1,6 +1,6 @@
-import config
 import pandas as pd
 from sklearn.model_selection import train_test_split
+
 
 def load_data(config):
     training_set_path = config.TRAIN_INPUT_PATH
@@ -10,6 +10,7 @@ def load_data(config):
     df_test = pd.read_csv(test_set_path)
 
     return df_train, df_test
+
 
 def pre_process(df_train, df_test, config, cols_drop=[]):
     split = 1 - config.TRAIN_VAL_SPLIT
@@ -29,9 +30,11 @@ def pre_process(df_train, df_test, config, cols_drop=[]):
 
     return data
 
+
 def main():
     print("Nothing to see here: Pre-process")
     return
+
 
 if __name__ == '__main__':
     main()
